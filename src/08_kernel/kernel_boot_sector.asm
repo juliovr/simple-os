@@ -32,9 +32,12 @@ load_kernel:
 
     ; Set-up parameters for our disk_load routine.
     mov bx, KERNEL_OFFSET   ; Load into address KERNEL_OFFSET.
-    mov dh, 15              ; We load the first 15 sectors (excluding 
+    mov dh, 9               ; We load the first 9 sectors (excluding 
     mov dl, [BOOT_DRIVE]    ; the boot sector) from the boot disk (i.e. our
-    call disk_load          ; kernel code) to address KERNEL_OFFSET
+    call disk_load          ; kernel code) to address KERNEL_OFFSET.
+                            ; Attempting to read more sector than the os_image
+                            ; will trigger a disk error because the are
+                            ; no more sectors (the file is not that big).
 
     ret
 
@@ -45,6 +48,15 @@ BEGIN_PM:
     mov ebx, MSG_PROT_MODE
     call print_string_pm    ; Use our 32-bit print routine.
 
+    ; Executing 'call KERNEL_OFFSET' works because the first function in kernel.c 
+    ; is the main routine, but if we add more code on top of that, that 
+    ; new code will be executed because it is at the KERNEL_OFFSET address. 
+    ; A better way is to call the function directly, in which the function
+    ; address must be resolve by the linker (which means the assembly section 
+    ; that calls the kernel entry-point should be assembled as 
+    ; object file and not binary).
+    ; So, we execute the code at KERNEL_OFFSET (which resides on kernel_entry.asm)
+    ; and that asm calls the main function on kernel.c.
     call KERNEL_OFFSET      ; Execute code at this address.
 
     jmp $                   ; Hang (as a safeguard).
