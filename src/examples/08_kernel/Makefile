@@ -1,4 +1,4 @@
-BIN = ../../bin
+BIN = ../bin
 
 all: os_image
 

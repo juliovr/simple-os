@@ -1,4 +1,4 @@
-BIN = ../../bin
+BIN = ../bin
 
 all: reading_from_disk_boot_sector
 

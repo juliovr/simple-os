@@ -1,4 +1,4 @@
-BIN = ../../bin
+BIN = ../bin
 
 all: loop_boot_sector
 

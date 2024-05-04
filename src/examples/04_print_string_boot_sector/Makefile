@@ -1,4 +1,4 @@
-BIN = ../../bin
+BIN = ../bin
 
 all: print_string_boot_sector
 

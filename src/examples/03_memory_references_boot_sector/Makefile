@@ -1,4 +1,4 @@
-BIN = ../../bin
+BIN = ../bin
 
 all: memory_references_boot_sector
 

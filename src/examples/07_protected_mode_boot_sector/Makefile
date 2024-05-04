@@ -1,4 +1,4 @@
-BIN = ../../bin
+BIN = ../bin
 
 all: protected_mode_boot_sector
 
