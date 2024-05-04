@@ -26,7 +26,7 @@ jmp $
 
 %include "../print_string.asm"
 %include "../print_hex.asm"
-%include "disk_load.asm"
+%include "../disk_load.asm"
 
 ; Global variables
 BOOT_DRIVE: db 0
