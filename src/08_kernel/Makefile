@@ -5,6 +5,7 @@ all: os_image
 clean:
 	rm -rf \
 		$(BIN)/kernel_boot_sector \
+		$(BIN)/kernel_entry.o \
 		$(BIN)/kernel.o \
 		$(BIN)/kernel.bin \
 		$(BIN)/os_image
