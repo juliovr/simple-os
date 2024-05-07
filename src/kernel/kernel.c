@@ -11,6 +11,12 @@ typedef struct {
 
 static Cursor cursor;
 
+void init_cursor()
+{
+    cursor.x = 0;
+    cursor.y = 0;
+}
+
 void scroll_screen()
 {
     // Copy memory to the previous line
@@ -26,21 +32,21 @@ void scroll_screen()
     }
 }
 
-void set_cursor_next_line(Cursor *cursor)
+void set_cursor_next_line()
 {
-    cursor->x = 0;
-    cursor->y++;
-    if (cursor->y >= MAX_ROWS) {
-        cursor->y = MAX_ROWS - 1; // Set cursor at last line;
+    cursor.x = 0;
+    cursor.y++;
+    if (cursor.y >= MAX_ROWS) {
+        cursor.y = MAX_ROWS - 1; // Set cursor at last line;
         scroll_screen();
     }
 }
 
-void advance_cursor(Cursor *cursor)
+void advance_cursor()
 {
-    cursor->x++;
-    if (cursor->x >= MAX_COLS) {
-        set_cursor_next_line(cursor);
+    cursor.x++;
+    if (cursor.x >= MAX_COLS) {
+        set_cursor_next_line();
     }
 }
 
@@ -61,11 +67,11 @@ void print_char(char c)
     switch (c)
     {
         case '\n': {
-            set_cursor_next_line(&cursor);
+            set_cursor_next_line();
         } break;
         default: {
             print_char_at(c, WHITE_ON_BLACK, cursor.y, cursor.x);
-            advance_cursor(&cursor);
+            advance_cursor();
         } break;
     }
 }
@@ -87,10 +93,9 @@ void clear_screen()
 
 void bootmain()
 {
+    init_cursor();
+
     clear_screen();
     
-    cursor.x = 0;
-    cursor.y = 20;
-
-    print_string("1 Hello World!\n");
+    print_string("Hello World!\n");
 }
