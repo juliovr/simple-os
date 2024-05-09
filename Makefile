@@ -5,7 +5,7 @@ KERNEL = src/kernel
 all: os_image
 
 run: all
-	qemu-system-x86_64 $(BIN)/os_image
+	qemu-system-x86_64 -drive format=raw,file=$(BIN)/os_image
 
 clean:
 	rm -rf \
@@ -28,6 +28,8 @@ kernel_entry.o: $(BOOT)/kernel_entry.asm
 
 kernel.o: $(KERNEL)/kernel.c
 	gcc -m32 -fno-pie -ffreestanding -c $(KERNEL)/kernel.c -o $(BIN)/kernel.o
+
+# TODO: add IDT in a new asm file. Now is in kernel_entry.asm.
 
 kernel.bin: kernel_entry.o kernel.o
 	ld -m elf_i386 -Ttext 0x1000 --oformat binary -o $(BIN)/kernel.bin $(BIN)/kernel_entry.o $(BIN)/kernel.o

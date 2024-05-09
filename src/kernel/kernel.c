@@ -1,3 +1,5 @@
+#include "idt.c"
+
 #define VIDEO_ADDRESS 0xb8000
 #define MAX_ROWS 25
 #define MAX_COLS 80
@@ -98,4 +100,7 @@ void bootmain()
     clear_screen();
     
     print_string("Hello World!\n");
+
+    init_idt();
+    int a = 1 / 0;
 }

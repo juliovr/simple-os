@@ -11,3 +11,18 @@ kernel_entry:
     call bootmain
 
     jmp $                   ; Hang (as a safeguard).
+
+
+; TODO: Move to a new IDT asm file when the interrupt functions is made 
+; to organize the source code
+[global interrupt_data]
+interrupt_data db 5, 9, 8
+
+[extern interrupt_handler]
+[global interrupt_service_routine]
+interrupt_service_routine:
+    pusha
+    cld
+    call interrupt_handler
+    popa
+    iret
