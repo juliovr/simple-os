@@ -5,7 +5,7 @@ KERNEL = src/kernel
 all: os_image
 
 run: all
-	qemu-system-x86_64 -drive format=raw,file=$(BIN)/os_image
+	qemu-system-x86_64 -d int -no-reboot -drive format=raw,file=$(BIN)/os_image
 
 clean:
 	rm -rf \

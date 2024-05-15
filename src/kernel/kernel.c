@@ -78,11 +78,37 @@ void print_char(char c)
     }
 }
 
-void print_string(char *string)
+void kprint(char *string)
 {
     while (*string) {
         print_char(*string++);
     }
+}
+
+void print_hex(int n)
+{
+    kprint("0x");
+    int size_bits = sizeof(n) * 8;
+    int shift = size_bits - 4;
+    char c;
+    while (shift >= 0) {
+        int value = (n >> shift) & 0xF;
+        if (value >= 10) {
+            c = value + ('A' - 10);
+        } else {
+            c = value + '0';
+        }
+
+        shift -= 4;
+        print_char(c);
+    }
+    print_char('\n');
+}
+
+void kprintln(char *string)
+{
+    kprint(string);
+    print_char('\n');
 }
 
 void clear_screen()
@@ -93,14 +119,20 @@ void clear_screen()
     }
 }
 
-void bootmain()
+void init_video()
 {
     init_cursor();
-
     clear_screen();
+}
+
+void bootmain()
+{
+    init_video();
     
-    print_string("Hello World!\n");
+    kprint("Hello World!\n");
 
     init_idt();
+
     int a = 1 / 0;
+    kprint("after division by 0\n");
 }
