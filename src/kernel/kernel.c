@@ -132,7 +132,4 @@ void bootmain()
     kprint("Hello World!\n");
 
     init_idt();
-
-    int a = 1 / 0;
-    kprint("after division by 0\n");
 }

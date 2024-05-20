@@ -1,4 +1,5 @@
 #include "types.h"
+#include "x86.h"
 
 #define IDT_SIZE 256
 
@@ -161,6 +162,6 @@ void init_idt()
     idtr.lo_offset = (u16)idt;
     idtr.hi_offset = ((u16)idt) >> 16;
 
-    asm volatile("lidt (%0)" : : "r" (&idtr));
+    lidt(&idtr);
 }
 
