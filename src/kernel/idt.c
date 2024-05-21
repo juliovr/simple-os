@@ -164,4 +164,3 @@ void init_idt()
 
     lidt(&idtr);
 }
-

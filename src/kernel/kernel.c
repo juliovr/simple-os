@@ -1,4 +1,5 @@
 #include "idt.c"
+#include "pic.c"
 
 #define VIDEO_ADDRESS 0xb8000
 #define MAX_ROWS 25
@@ -132,4 +133,12 @@ void bootmain()
     kprint("Hello World!\n");
 
     init_idt();
+
+    pic_initialize(0x20, 0x28);
+    u16 irr = pic_read_irr();
+    u16 isr = pic_read_isr();
+    kprint("IRR = ");
+    print_hex(irr);
+    kprint("ISR = ");
+    print_hex(isr);
 }
