@@ -32,12 +32,14 @@ load_kernel:
 
     ; Set-up parameters for our disk_load routine.
     mov bx, KERNEL_OFFSET   ; Load into memory at address KERNEL_OFFSET.
-    mov dh, 9               ; We load the first 9 sectors (excluding 
+    mov dh, 25              ; We load the first 25 sectors (excluding 
     mov dl, [BOOT_DRIVE]    ; the boot sector) from the boot disk (i.e. our
     call disk_load          ; kernel code) to address KERNEL_OFFSET.
                             ; Attempting to read more sector than the os_image
                             ; will trigger a disk error because the are
                             ; no more sectors (the file is not that big).
+                            ; On the other side, reading fewer sectors would limit
+                            ; the amount of code to be used, because would not be loaded.
 
     ret
 

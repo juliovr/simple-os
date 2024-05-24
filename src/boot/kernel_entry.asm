@@ -37,7 +37,9 @@ isr_common_stub:
     mov gs, ax
 
     ; 2. Call ISR handler in idt.c
+    push esp            ; Pass pointer to stack to C, so we can access all the pushed information
     call isr_handler
+    add esp, 4          ; Clean up pointer parameter passed to C function by restoring the stack pointer.
 
     ; 3. Restore CPU state
     pop eax
@@ -199,7 +201,7 @@ isr16:
     jmp isr_common_stub
 
 ; 17: Alignment Check Exception (with Error Code)
-isr117:
+isr17:
     cli
     push byte 17
     jmp isr_common_stub

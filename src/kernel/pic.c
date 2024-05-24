@@ -73,6 +73,10 @@ void pic_initialize(int offset_master, int offset_slave)
     outb(PIC2_DATA, ICW4_8086);     // ICW4: have the PICs use 8086 mode instead of 8080.
     io_wait();
 
+    // Clear data registers
+    outb(PIC1_DATA, 0);
+    outb(PIC2_DATA, 0);
+
     // Restore masks
     outb(PIC1_DATA, mask_master);
     outb(PIC2_DATA, mask_slave);
@@ -84,8 +88,8 @@ void pic_initialize(int offset_master, int offset_slave)
  */
 u16 __pic_read_register(int ocw3)
 {
-    outb(PIC1_COMMAND, 0x0A);
-    outb(PIC2_COMMAND, 0x0A);
+    outb(PIC1_COMMAND, ocw3);
+    outb(PIC2_COMMAND, ocw3);
     return ((inb(PIC2_COMMAND) << 8) | inb(PIC1_COMMAND));
 }
 /*

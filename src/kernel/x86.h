@@ -22,7 +22,7 @@ static inline
 u8 inb(u16 port)
 {
     u8 data;
-    asm volatile("in %1, %0": "=a" (data) : "Nd" (port));
+    asm volatile("in %1, %0" : "=a" (data) : "Nd" (port));
 
     return data;
 }
@@ -31,10 +31,13 @@ static inline
 u16 inw(u16 port)
 {
     u16 data;
-    asm volatile("in %1, %0": "=a" (data) : "Nd" (port));
+    asm volatile("in %1, %0" : "=a" (data) : "Nd" (port));
 
     return data;
 }
+
+#define INTERRUPT(n) asm volatile("int %0" : : "I" (n))
+
 
 /*
  * Wait a very small amount of time (1 to 4 microseconds, generally).

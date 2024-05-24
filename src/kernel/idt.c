@@ -1,13 +1,16 @@
 #include "types.h"
 #include "x86.h"
 
-#define IDT_SIZE 256
+#define IDT_SIZE                    256
 
-#define KERNEL_MODE 0x0
-#define USER_MODE 0x3
-#define GATE_TYPE_TASK 0x5
-#define GATE_TYPE_INTERRUPT_32_BIT 0xE
-#define GATE_TYPE_TRAP_32_BIT 0xF
+#define KERNEL_MODE                 0x0
+#define USER_MODE                   0x3
+#define GATE_TYPE_TASK              0x5
+#define GATE_TYPE_INTERRUPT_32_BIT  0xE
+#define GATE_TYPE_TRAP_32_BIT       0xF
+
+#define FLAG_PRESENT                1
+#define FLAG_NOT_PRESENT            0
 
 // TODO: find a way to use the same variable in asm and in C,
 // as the constant is in the a diferent compilation object (i.e. the bootsector).
@@ -49,35 +52,78 @@ struct IDTR {
 struct IDTR idtr;
 
 struct Registers {
-    u32 edi, esi, ebp, esp, ebx, edx, ecx, eax; // pushed by "pusha"
-    u32 int_no, errcode;                         // pushed by specific isr
-    u32 eip, cs, eflags, useresp, ss;   /* pushed by the processor automatically */
+    u32 ds;
+    u32 edi, esi, ebp, esp, ebx, edx, ecx, eax;     // pushed by "pusha"
+    u32 int_no, errcode;                            // pushed by specific isr
+    u32 eip, cs, eflags, useresp, ss;               // pushed by the processor automatically
 };
 
-void print_registers(struct Registers r)
+
+static char *exception_names[] = {
+    "Divide by zero error",
+    "Debug",
+    "Non-maskable Interrupt",
+    "Breakpoint",
+    "Overflow",
+    "Bound Range Exceeded",
+    "Invalid Opcode",
+    "Device Not Available",
+    "Double Fault",
+    "Coprocessor Segment Overrun",
+    "Invalid TSS",
+    "Segment Not Present",
+    "Stack-Segment Fault",
+    "General Protection Fault",
+    "Page Fault",
+    "",
+    "x87 Floating-Point Exception",
+    "Alignment Check",
+    "Machine Check",
+    "SIMD Floating-Point Exception",
+    "Virtualization Exception",
+    "Control Protection Exception ",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "Hypervisor Injection Exception",
+    "VMM Communication Exception",
+    "Security Exception",
+    ""
+};
+
+void print_registers(struct Registers *r)
 {
-    kprint("edi = "); print_hex(r.edi);
-    kprint("esi = "); print_hex(r.esi);
-    kprint("ebp = "); print_hex(r.ebp);
-    kprint("esp = "); print_hex(r.esp);
-    kprint("ebx = "); print_hex(r.ebx);
-    kprint("edx = "); print_hex(r.edx);
-    kprint("ecx = "); print_hex(r.ecx);
-    kprint("eax = "); print_hex(r.eax);
-    kprint("int_no = "); print_hex(r.int_no);
-    kprint("errcode = "); print_hex(r.errcode);
-    kprint("eip = "); print_hex(r.eip);
-    kprint("cs = "); print_hex(r.cs);
-    kprint("eflags = "); print_hex(r.eflags);
-    kprint("useresp = "); print_hex(r.useresp);
-    kprint("ss = "); print_hex(r.ss);
+    kprint("edi = "); print_hex(r->edi);
+    kprint("esi = "); print_hex(r->esi);
+    kprint("ebp = "); print_hex(r->ebp);
+    kprint("esp = "); print_hex(r->esp);
+    kprint("ebx = "); print_hex(r->ebx);
+    kprint("edx = "); print_hex(r->edx);
+    kprint("ecx = "); print_hex(r->ecx);
+    kprint("eax = "); print_hex(r->eax);
+    kprint("int_no = "); print_hex(r->int_no);
+    kprint("errcode = "); print_hex(r->errcode);
+    kprint("eip = "); print_hex(r->eip);
+    kprint("cs = "); print_hex(r->cs);
+    kprint("eflags = "); print_hex(r->eflags);
+    kprint("useresp = "); print_hex(r->useresp);
+    kprint("ss = "); print_hex(r->ss);
 }
 
-void isr_handler(struct Registers r)
+
+void isr_handler(struct Registers *r)
 {
-    print_registers(r);
-    kprint("from interrupt_handler!\n");
-    for (;;) ;
+    if (r->int_no < 32) {
+        kprint_error(exception_names[r->int_no]);
+        kprint_error("\n");
+    } else {
+        kprint("Unhandled exception: ");
+        print_hex(r->int_no);
+        print_registers(r);
+    }
 }
 
 extern void isr_generic_handler();
@@ -116,44 +162,42 @@ extern void isr31();
 
 void init_idt()
 {
-    kprint("init_idt\n");
-
     for (int i = 0; i < IDT_SIZE; i++) {
-        GATE_DESCRIPTOR(idt[i], isr_generic_handler, CODE_SEG, 0, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+        GATE_DESCRIPTOR(idt[i], isr_generic_handler, CODE_SEG, FLAG_NOT_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
     }
 
-    GATE_DESCRIPTOR(idt[0],  isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[1],  isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[2],  isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[3],  isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[4],  isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[5],  isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[6],  isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[7],  isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[8],  isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[9],  isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[10], isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[11], isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[12], isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[13], isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[14], isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[15], isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[16], isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[17], isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[18], isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[19], isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[20], isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[21], isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[22], isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[23], isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[24], isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[25], isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[26], isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[27], isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[28], isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[29], isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[30], isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
-    GATE_DESCRIPTOR(idt[31], isr0, CODE_SEG, 1, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[0],  isr0, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[1],  isr1, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[2],  isr2, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[3],  isr3, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[4],  isr4, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[5],  isr5, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[6],  isr6, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[7],  isr7, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[8],  isr8, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[9],  isr9, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[10], isr10, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[11], isr11, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[12], isr12, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[13], isr13, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[14], isr14, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[15], isr15, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[16], isr16, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[17], isr17, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[18], isr18, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[19], isr19, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[20], isr20, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[21], isr21, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[22], isr22, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[23], isr23, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[24], isr24, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[25], isr25, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[26], isr26, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[27], isr27, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[28], isr28, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[29], isr29, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[30], isr30, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[31], isr31, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
 
 
     // asm instruction throws an error when using 32-bit register, so the offset is

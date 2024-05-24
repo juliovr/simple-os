@@ -6,6 +6,7 @@
 #define MAX_COLS 80
 #define SCREEN_SIZE (MAX_ROWS * MAX_COLS)
 #define WHITE_ON_BLACK 0x0f
+#define RED_ON_BLACK 0x04
 
 typedef struct {
     int x;
@@ -13,6 +14,7 @@ typedef struct {
 } Cursor;
 
 static Cursor cursor;
+static u8 text_color;
 
 void init_cursor()
 {
@@ -54,15 +56,12 @@ void advance_cursor()
 }
 
 
-void print_char_at(char c, int attribute, int row, int col)
+void print_char_at(char c, int row, int col)
 {
     short *video_memory = (short *)VIDEO_ADDRESS;
-    if (attribute == 0) {
-        attribute = WHITE_ON_BLACK;
-    }
 
     int offset = ((row * MAX_COLS) + col);
-    video_memory[offset] = (attribute << 8 | c);
+    video_memory[offset] = (text_color << 8 | c);
 }
 
 void print_char(char c)
@@ -73,21 +72,34 @@ void print_char(char c)
             set_cursor_next_line();
         } break;
         default: {
-            print_char_at(c, WHITE_ON_BLACK, cursor.y, cursor.x);
+            print_char_at(c, cursor.y, cursor.x);
             advance_cursor();
         } break;
     }
 }
 
-void kprint(char *string)
+void print_string(char *string)
 {
     while (*string) {
         print_char(*string++);
     }
 }
 
+void kprint(char *string)
+{
+    text_color = WHITE_ON_BLACK;
+    print_string(string);
+}
+
+void kprint_error(char *string)
+{
+    text_color = RED_ON_BLACK;
+    print_string(string);
+}
+
 void print_hex(int n)
 {
+    text_color = WHITE_ON_BLACK;
     kprint("0x");
     int size_bits = sizeof(n) * 8;
     int shift = size_bits - 4;
@@ -108,6 +120,7 @@ void print_hex(int n)
 
 void kprintln(char *string)
 {
+    text_color = WHITE_ON_BLACK;
     kprint(string);
     print_char('\n');
 }
@@ -130,9 +143,12 @@ void bootmain()
 {
     init_video();
     
-    kprint("Hello World!\n");
+    kprintln("Welcome to my simple kernel!");
 
     init_idt();
+
+    kprintln("Test interrupt. Raise int 0:");
+    INTERRUPT(0);
 
     pic_initialize(0x20, 0x28);
     u16 irr = pic_read_irr();
@@ -141,4 +157,6 @@ void bootmain()
     print_hex(irr);
     kprint("ISR = ");
     print_hex(isr);
+
+    kprintln("final!");
 }
