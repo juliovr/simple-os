@@ -14,16 +14,18 @@ kernel_entry:
     jmp $                   ; Hang (as a safeguard).
 
 
+;
+; TODO: move to another file!!!
+;
+
 ; Default isr handler to fill the 256 idt entries
 global isr_generic_handler
 isr_generic_handler:
     jmp $
 
 
-
-
-global isr_common_stub
 extern isr_handler
+extern irq_handler
 
 isr_common_stub:
     ; 1. Save CPU state
@@ -53,7 +55,36 @@ isr_common_stub:
     iret                ; Pops cs, eip, eflags, ss and esp
 
 
-; First make the ISRs global
+irq_common_stub:
+    ; 1. Save CPU state
+    pusha               ; Pushes edi, esi, ebp, esp, ebx, edx, ecx, eax
+    mov ax, ds          ; Lower 16-bits
+    push eax            ;   to save the data segment descriptor
+    mov ax, 0x10        ; Load kernel data segment descriptor
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
+    ; 2. Call ISR handler in idt.c
+    push esp            ; Pass pointer to stack to C, so we can access all the pushed information
+    call irq_handler
+    add esp, 4          ; Clean up pointer parameter passed to C function by restoring the stack pointer.
+
+    ; 3. Restore CPU state
+    pop eax
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    popa
+    add esp, 8          ; Cleans up the pushed error code and ISR number.
+    sti                 ; Turn on interrupt flag
+    iret                ; Pops cs, eip, eflags, ss and esp
+
+
+
+; ISRs
 global isr0
 global isr1
 global isr2
@@ -86,6 +117,29 @@ global isr28
 global isr29
 global isr30
 global isr31
+
+; IRQs
+global irq0
+global irq1
+global irq2
+global irq3
+global irq4
+global irq5
+global irq6
+global irq7
+global irq8
+global irq9
+global irq10
+global irq11
+global irq12
+global irq13
+global irq14
+global irq15
+
+
+;
+; ISRs
+;
 
 ; 0: Divide By Zero Exception
 isr0:
@@ -303,3 +357,105 @@ isr31:
     push byte 0
     push byte 31
     jmp isr_common_stub
+
+
+
+;
+; IRQs
+;
+
+irq0:
+    cli
+    push byte 0
+    push byte 32
+    jmp irq_common_stub
+
+irq1:
+    cli
+    push byte 0
+    push byte 33
+    jmp irq_common_stub
+
+irq2:
+    cli
+    push byte 0
+    push byte 34
+    jmp irq_common_stub
+
+irq3:
+    cli
+    push byte 0
+    push byte 35
+    jmp irq_common_stub
+
+irq4:
+    cli
+    push byte 0
+    push byte 36
+    jmp irq_common_stub
+
+irq5:
+    cli
+    push byte 0
+    push byte 37
+    jmp irq_common_stub
+
+irq6:
+    cli
+    push byte 0
+    push byte 38
+    jmp irq_common_stub
+
+irq7:
+    cli
+    push byte 0
+    push byte 39
+    jmp irq_common_stub
+
+irq8:
+    cli
+    push byte 0
+    push byte 40
+    jmp irq_common_stub
+
+irq9:
+    cli
+    push byte 0
+    push byte 41
+    jmp irq_common_stub
+
+irq10:
+    cli
+    push byte 0
+    push byte 42
+    jmp irq_common_stub
+
+irq11:
+    cli
+    push byte 0
+    push byte 43
+    jmp irq_common_stub
+
+irq12:
+    cli
+    push byte 0
+    push byte 44
+    jmp irq_common_stub
+
+irq13:
+    cli
+    push byte 0
+    push byte 45
+    jmp irq_common_stub
+
+irq14:
+    cli
+    push byte 0
+    push byte 46
+    jmp irq_common_stub
+
+irq15:
+    cli
+    push byte 0
+    push byte 47
+    jmp irq_common_stub

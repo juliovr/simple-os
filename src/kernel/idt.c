@@ -21,6 +21,7 @@ void print_char(char c);
 void kprint(char *string);
 void kprintln(char *string);
 void print_hex(int n);
+void kprint_error(char *string);
 
 struct GateDescriptor {
     u16 offset_0_15;
@@ -60,7 +61,7 @@ struct Registers {
 
 
 static char *exception_names[] = {
-    "Divide by zero error",
+    "Divide by zero",
     "Debug",
     "Non-maskable Interrupt",
     "Breakpoint",
@@ -117,6 +118,7 @@ void print_registers(struct Registers *r)
 void isr_handler(struct Registers *r)
 {
     if (r->int_no < 32) {
+        kprint_error("Error: ");
         kprint_error(exception_names[r->int_no]);
         kprint_error("\n");
     } else {
@@ -125,6 +127,16 @@ void isr_handler(struct Registers *r)
         print_registers(r);
     }
 }
+
+void irq_handler(struct Registers *r)
+{
+    kprint_error("handling irq ");
+    kprint_error("asd");
+    kprint_error("\n");
+    
+    pic_send_eoi(r->int_no);
+}
+
 
 extern void isr_generic_handler();
 extern void isr0();
@@ -160,12 +172,30 @@ extern void isr29();
 extern void isr30();
 extern void isr31();
 
+extern void irq0();
+extern void irq1();
+extern void irq2();
+extern void irq3();
+extern void irq4();
+extern void irq5();
+extern void irq6();
+extern void irq7();
+extern void irq8();
+extern void irq9();
+extern void irq10();
+extern void irq11();
+extern void irq12();
+extern void irq13();
+extern void irq14();
+extern void irq15();
+
 void init_idt()
 {
     for (int i = 0; i < IDT_SIZE; i++) {
         GATE_DESCRIPTOR(idt[i], isr_generic_handler, CODE_SEG, FLAG_NOT_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
     }
 
+    // ISRs
     GATE_DESCRIPTOR(idt[0],  isr0, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
     GATE_DESCRIPTOR(idt[1],  isr1, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
     GATE_DESCRIPTOR(idt[2],  isr2, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
@@ -199,6 +229,23 @@ void init_idt()
     GATE_DESCRIPTOR(idt[30], isr30, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
     GATE_DESCRIPTOR(idt[31], isr31, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
 
+    // IRQs
+    GATE_DESCRIPTOR(idt[32],  irq0, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[33],  irq1, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[34],  irq2, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[35],  irq3, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[36],  irq4, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[37],  irq5, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[38],  irq6, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[39],  irq7, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[40],  irq8, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[41],  irq9, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[42], irq10, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[43], irq11, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[44], irq12, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[45], irq13, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[46], irq14, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+    GATE_DESCRIPTOR(idt[47], irq15, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
 
     // asm instruction throws an error when using 32-bit register, so the offset is
     // splitted into 2 u16 values.
