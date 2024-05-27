@@ -1,5 +1,6 @@
 #include "idt.c"
 #include "pic.c"
+#include "pit.c"
 
 #define VIDEO_ADDRESS 0xb8000
 #define MAX_ROWS 25
@@ -147,10 +148,17 @@ void bootmain()
 
     init_idt();
 
+    // Enable interrupts
+    asm volatile("sti");
+
+    pic_initialize(0x20, 0x28);
+    pic_unmask(0);
+
+    init_pit();
+
     kprintln("Test interrupt. Raise int 0:");
     INTERRUPT(0);
 
-    pic_initialize(0x20, 0x28);
     u16 irr = pic_read_irr();
     u16 isr = pic_read_isr();
     kprint("IRR = ");

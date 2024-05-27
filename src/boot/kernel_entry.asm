@@ -73,6 +73,7 @@ irq_common_stub:
 
     ; 3. Restore CPU state
     pop eax
+    ; pop ebx
     mov ds, ax
     mov es, ax
     mov fs, ax

@@ -84,21 +84,14 @@ void pic_initialize(int offset_master, int offset_slave)
 
 
 /*
- * Helper function. 
- */
-u16 __pic_read_register(int ocw3)
-{
-    outb(PIC1_COMMAND, ocw3);
-    outb(PIC2_COMMAND, ocw3);
-    return ((inb(PIC2_COMMAND) << 8) | inb(PIC1_COMMAND));
-}
-/*
  * Read the Interrupt Request Register (IRR).
  * As IRR is 8 bit, the high 8 bits are from slave PIC and low 8 bits are from master PIC.
  */
 u16 pic_read_irr()
 {
-    return __pic_read_register(OCW3_READ_IRR);
+    outb(PIC1_COMMAND, OCW3_READ_IRR);
+    outb(PIC2_COMMAND, OCW3_READ_IRR);
+    return ((inb(PIC2_COMMAND) << 8) | inb(PIC1_COMMAND));
 }
 
 /*
@@ -107,5 +100,44 @@ u16 pic_read_irr()
  */
 u16 pic_read_isr()
 {
-    return __pic_read_register(OCW3_READ_ISR);
+    outb(PIC1_COMMAND, OCW3_READ_ISR);
+    outb(PIC2_COMMAND, OCW3_READ_ISR);
+    return ((inb(PIC2_COMMAND) << 8) | inb(PIC1_COMMAND));
+    
+}
+
+/*
+ * Setting the bit on makes the PIC ignores the that types of IRQs.
+ */
+void pic_mask(u8 irq)
+{
+    u16 port;
+    if (irq < 8) {
+        port = PIC1_DATA;
+    } else {
+        port = PIC2_DATA;
+        irq -= 8;
+    }
+
+    u8 current_mask = inb(port);
+    u8 value = current_mask | (1 << irq);
+    outb(port, value); // Set the mask
+}
+
+/*
+ * Set off the bit to make the PIC serve the IRQs again.
+ */
+void pic_unmask(u8 irq)
+{
+    u16 port;
+    if (irq < 8) {
+        port = PIC1_DATA;
+    } else {
+        port = PIC2_DATA;
+        irq -= 8;
+    }
+
+    u8 current_mask = inb(port);
+    u8 value = current_mask & ~(1 << irq);
+    outb(port, value); // Set the mask
 }

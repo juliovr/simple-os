@@ -130,11 +130,10 @@ void isr_handler(struct Registers *r)
 
 void irq_handler(struct Registers *r)
 {
-    kprint_error("handling irq ");
-    kprint_error("asd");
-    kprint_error("\n");
+    pic_send_eoi(r->int_no - 32); // The first IRQ has interrupt number 32.
     
-    pic_send_eoi(r->int_no);
+    kprint_error("handling irq: ");
+    print_hex(r->int_no);
 }
 
 
@@ -246,6 +245,7 @@ void init_idt()
     GATE_DESCRIPTOR(idt[45], irq13, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
     GATE_DESCRIPTOR(idt[46], irq14, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
     GATE_DESCRIPTOR(idt[47], irq15, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
+
 
     // asm instruction throws an error when using 32-bit register, so the offset is
     // splitted into 2 u16 values.
