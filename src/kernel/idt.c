@@ -17,6 +17,24 @@
 #define CODE_SEG 0x8
 #define DATA_SEG 0x10
 
+/* ISRs number for IRQs */
+#define IRQ_0   32
+#define IRQ_1   33
+#define IRQ_2   34
+#define IRQ_3   35
+#define IRQ_4   36
+#define IRQ_5   37
+#define IRQ_6   38
+#define IRQ_7   39
+#define IRQ_8   40
+#define IRQ_9   41
+#define IRQ_10  42
+#define IRQ_11  43
+#define IRQ_12  44
+#define IRQ_13  45
+#define IRQ_14  46
+#define IRQ_15  47
+
 void print_char(char c);
 void kprint(char *string);
 void kprintln(char *string);
@@ -32,6 +50,7 @@ struct GateDescriptor {
 };
 
 struct GateDescriptor idt[IDT_SIZE];
+
 
 #define GATE_DESCRIPTOR(gate, offset, segment, p, dpl, type)                       \
 {                                                                                  \
@@ -58,6 +77,17 @@ struct Registers {
     u32 int_no, errcode;                            // pushed by specific isr
     u32 eip, cs, eflags, useresp, ss;               // pushed by the processor automatically
 };
+
+
+typedef void (*irq_handler_t)(struct Registers *r);
+irq_handler_t irq_handlers[IDT_SIZE];
+
+void add_irq_handler(int int_no, irq_handler_t irq_handler)
+{
+    if (int_no >= 0 && int_no < IDT_SIZE) {
+        irq_handlers[int_no] = irq_handler;
+    }
+}
 
 
 static char *exception_names[] = {
@@ -117,10 +147,15 @@ void print_registers(struct Registers *r)
 
 void isr_handler(struct Registers *r)
 {
-    if (r->int_no < 32) {
-        kprint_error("Error: ");
-        kprint_error(exception_names[r->int_no]);
-        kprint_error("\n");
+    if (r->int_no < IRQ_0) {
+        // kprint_error("Error: ");
+        // kprint_error(exception_names[r->int_no]);
+        // kprint_error("\n");
+
+        irq_handler_t handler = irq_handlers[r->int_no];
+        if (handler != 0) {
+            handler(r);
+        }
     } else {
         kprint("Unhandled exception: ");
         print_hex(r->int_no);
@@ -130,10 +165,12 @@ void isr_handler(struct Registers *r)
 
 void irq_handler(struct Registers *r)
 {
-    pic_send_eoi(r->int_no - 32); // The first IRQ has interrupt number 32.
-    
-    kprint_error("handling irq: ");
-    print_hex(r->int_no);
+    pic_send_eoi(r->int_no - IRQ_0); // The first IRQ has interrupt number 32.
+
+    irq_handler_t handler = irq_handlers[r->int_no];
+    if (handler != 0) {
+        handler(r);
+    }
 }
 
 
@@ -187,6 +224,13 @@ extern void irq12();
 extern void irq13();
 extern void irq14();
 extern void irq15();
+
+void handler_int_0(struct Registers *r)
+{
+    kprint_error("Error: ");
+    kprint_error(exception_names[r->int_no]);
+    kprint_error("\n");
+}
 
 void init_idt()
 {
@@ -246,6 +290,7 @@ void init_idt()
     GATE_DESCRIPTOR(idt[46], irq14, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
     GATE_DESCRIPTOR(idt[47], irq15, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
 
+    add_irq_handler(0, handler_int_0);
 
     // asm instruction throws an error when using 32-bit register, so the offset is
     // splitted into 2 u16 values.

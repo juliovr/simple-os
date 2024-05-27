@@ -1,5 +1,7 @@
 #ifndef X86_H
 
+#define INTERRUPT(n) asm volatile("int %0" : : "I" (n))
+
 static inline 
 void lidt(void *idtr)
 {
@@ -36,8 +38,14 @@ u16 inw(u16 port)
     return data;
 }
 
-#define INTERRUPT(n) asm volatile("int %0" : : "I" (n))
-
+/*
+ * Enable interrupts.
+ */
+static inline
+void sti()
+{
+    asm volatile("sti");
+}
 
 /*
  * Wait a very small amount of time (1 to 4 microseconds, generally).

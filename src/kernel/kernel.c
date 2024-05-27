@@ -148,23 +148,15 @@ void bootmain()
 
     init_idt();
 
-    // Enable interrupts
-    asm volatile("sti");
+    sti();
 
     pic_initialize(0x20, 0x28);
     pic_unmask(0);
 
-    init_pit();
+    init_pit(82); // 82 divides perfectly the PIT freq.
 
     kprintln("Test interrupt. Raise int 0:");
     INTERRUPT(0);
-
-    u16 irr = pic_read_irr();
-    u16 isr = pic_read_isr();
-    kprint("IRR = ");
-    print_hex(irr);
-    kprint("ISR = ");
-    print_hex(isr);
 
     kprintln("final!");
 }
