@@ -24,19 +24,6 @@
 #define OCW3_READ_IRR   0x0A
 #define OCW3_READ_ISR   0x0B
 
-/*
- * Send End-Of-Interrupt.
- * This is issued to the PIC chips at the end of an IRQ-based interrupt routine.
- */
-void pic_send_eoi(u8 irq)
-{
-    // If the IRQ comes from the slave PIC, it is neccesary to issue the command to both PIC chips.
-    if (irq >= 8) {
-        outb(PIC2_COMMAND, PIC_EOI);
-    }
-
-    outb(PIC1_COMMAND, PIC_EOI);
-}
 
 /*
  * In protected mode, the IRQs 0 to 7 conflict with the CPU exception which are reserved by Intel up until 0x1F.
@@ -84,7 +71,23 @@ void pic_initialize(int offset_master, int offset_slave)
 
 
 /*
+ * Send End-Of-Interrupt.
+ * This is issued to the PIC chips at the end of an IRQ-based interrupt routine.
+ */
+void pic_send_eoi(u8 irq)
+{
+    // If the IRQ comes from the slave PIC, it is neccesary to issue the command to both PIC chips.
+    if (irq >= 8) {
+        outb(PIC2_COMMAND, PIC_EOI);
+    }
+
+    outb(PIC1_COMMAND, PIC_EOI);
+}
+
+
+/*
  * Read the Interrupt Request Register (IRR).
+ * It is an 8-bit register containing the interrupts to be acknowledged.
  * As IRR is 8 bit, the high 8 bits are from slave PIC and low 8 bits are from master PIC.
  */
 u16 pic_read_irr()
@@ -96,6 +99,7 @@ u16 pic_read_irr()
 
 /*
  * Read the In-Service Register (ISR).
+ * It is an 8-bit register containing the interrupts that are being serviced.
  * As ISR is 8 bit, the high 8 bits are from slave PIC and low 8 bits are from master PIC.
  */
 u16 pic_read_isr()

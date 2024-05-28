@@ -232,6 +232,13 @@ void handler_int_0(struct Registers *r)
     kprint_error("\n");
 }
 
+#define SCANCODE_PORT   0x60
+void handle_keyboard_interrupt(struct Registers *r)
+{
+    u8 scancode = inb(SCANCODE_PORT);
+    print_hex(scancode);
+}
+
 void init_idt()
 {
     for (int i = 0; i < IDT_SIZE; i++) {
@@ -291,6 +298,8 @@ void init_idt()
     GATE_DESCRIPTOR(idt[47], irq15, CODE_SEG, FLAG_PRESENT, KERNEL_MODE, GATE_TYPE_INTERRUPT_32_BIT);
 
     add_irq_handler(0, handler_int_0);
+
+    add_irq_handler(IRQ_1, handle_keyboard_interrupt);
 
     // asm instruction throws an error when using 32-bit register, so the offset is
     // splitted into 2 u16 values.

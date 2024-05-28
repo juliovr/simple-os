@@ -151,7 +151,8 @@ void bootmain()
     sti();
 
     pic_initialize(0x20, 0x28);
-    pic_unmask(0);
+    pic_mask(0);
+    pic_unmask(1);
 
     init_pit(82); // 82 divides perfectly the PIT freq.
 

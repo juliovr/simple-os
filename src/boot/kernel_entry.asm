@@ -66,18 +66,18 @@ irq_common_stub:
     mov fs, ax
     mov gs, ax
 
-    ; 2. Call ISR handler in idt.c
+    ; 2. Call IRQ handler in idt.c
     push esp            ; Pass pointer to stack to C, so we can access all the pushed information
     call irq_handler
     add esp, 4          ; Clean up pointer parameter passed to C function by restoring the stack pointer.
 
     ; 3. Restore CPU state
-    pop eax
-    ; pop ebx
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
+    ; pop eax
+    pop ebx
+    mov ds, bx
+    mov es, bx
+    mov fs, bx
+    mov gs, bx
     popa
     add esp, 8          ; Cleans up the pushed error code and ISR number.
     sti                 ; Turn on interrupt flag
