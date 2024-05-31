@@ -237,14 +237,15 @@ void handler_int_0(struct Registers *r)
                                            e.g. press 'a' (0x1E), when released it will trigger 0x9E. */
 
 static u8 shift_pressed = 0;
+static u8 capslock = 0;
 
 #define PRINT_KEY_SHIFT(key, key_with_shift) if (shift_pressed) { kprint_char(key_with_shift); } else { kprint_char(key); }
+#define PRINT_KEY_SHIFT_CAPSLOCK(key, key_with_shift) if (shift_pressed || capslock) { kprint_char(key_with_shift); } else { kprint_char(key); }
 
 /* Scancodes: https://www.win.tue.nl/~aeb/linux/kbd/scancodes-10.html#scancodesets */
 void handle_keyboard_interrupt(struct Registers *r)
 {
     u8 scancode = inb(SCANCODE_PORT);
-    // TODO: save the values in a table and just lookup for the values. In this way the switch is reduced dramatically; I just need to left the special cases, like backspace.
     switch (scancode) {
         case 0x02: { PRINT_KEY_SHIFT('1', '!'); } break;
         case 0x03: { PRINT_KEY_SHIFT('2', '@'); } break;
@@ -258,42 +259,42 @@ void handle_keyboard_interrupt(struct Registers *r)
         case 0x0B: { PRINT_KEY_SHIFT('0', ')'); } break;
         case 0x0C: { PRINT_KEY_SHIFT('-', '_'); } break;
         case 0x0D: { PRINT_KEY_SHIFT('=', '+'); } break;
-        case 0x0E: { backspace_cursor(); } break;
-        case 0x0F: { /* handle tab */ } break;
-        case 0x10: { PRINT_KEY_SHIFT('q', 'Q'); } break;
-        case 0x11: { PRINT_KEY_SHIFT('w', 'W'); } break;
-        case 0x12: { PRINT_KEY_SHIFT('e', 'E'); } break;
-        case 0x13: { PRINT_KEY_SHIFT('r', 'R'); } break;
-        case 0x14: { PRINT_KEY_SHIFT('t', 'T'); } break;
-        case 0x15: { PRINT_KEY_SHIFT('y', 'Y'); } break;
-        case 0x16: { PRINT_KEY_SHIFT('u', 'U'); } break;
-        case 0x17: { PRINT_KEY_SHIFT('i', 'I'); } break;
-        case 0x18: { PRINT_KEY_SHIFT('o', 'O'); } break;
-        case 0x19: { PRINT_KEY_SHIFT('p', 'P'); } break;
+        case 0x0E: { backspace_cursor(); } break; // Backspace
+        case 0x0F: { kprint("    "); } break; // TAB
+        case 0x10: { PRINT_KEY_SHIFT_CAPSLOCK('q', 'Q'); } break;
+        case 0x11: { PRINT_KEY_SHIFT_CAPSLOCK('w', 'W'); } break;
+        case 0x12: { PRINT_KEY_SHIFT_CAPSLOCK('e', 'E'); } break;
+        case 0x13: { PRINT_KEY_SHIFT_CAPSLOCK('r', 'R'); } break;
+        case 0x14: { PRINT_KEY_SHIFT_CAPSLOCK('t', 'T'); } break;
+        case 0x15: { PRINT_KEY_SHIFT_CAPSLOCK('y', 'Y'); } break;
+        case 0x16: { PRINT_KEY_SHIFT_CAPSLOCK('u', 'U'); } break;
+        case 0x17: { PRINT_KEY_SHIFT_CAPSLOCK('i', 'I'); } break;
+        case 0x18: { PRINT_KEY_SHIFT_CAPSLOCK('o', 'O'); } break;
+        case 0x19: { PRINT_KEY_SHIFT_CAPSLOCK('p', 'P'); } break;
         case 0x1A: { PRINT_KEY_SHIFT('[', '{'); } break;
         case 0x1B: { PRINT_KEY_SHIFT(']', '}'); } break;
         case 0x2B: { PRINT_KEY_SHIFT('\\', '|'); } break;
-        case 0x3A: { /* handle caps lock */ } break; // Caps lock
-        case 0x1E: { PRINT_KEY_SHIFT('a', 'A'); } break;
-        case 0x1F: { PRINT_KEY_SHIFT('s', 'S'); } break;
-        case 0x20: { PRINT_KEY_SHIFT('d', 'D'); } break;
-        case 0x21: { PRINT_KEY_SHIFT('f', 'F'); } break;
-        case 0x22: { PRINT_KEY_SHIFT('g', 'G'); } break;
-        case 0x23: { PRINT_KEY_SHIFT('h', 'H'); } break;
-        case 0x24: { PRINT_KEY_SHIFT('j', 'J'); } break;
-        case 0x25: { PRINT_KEY_SHIFT('k', 'K'); } break;
-        case 0x26: { PRINT_KEY_SHIFT('l', 'L'); } break;
+        case 0x3A: { capslock = !capslock; } break; // Caps lock
+        case 0x1E: { PRINT_KEY_SHIFT_CAPSLOCK('a', 'A'); } break;
+        case 0x1F: { PRINT_KEY_SHIFT_CAPSLOCK('s', 'S'); } break;
+        case 0x20: { PRINT_KEY_SHIFT_CAPSLOCK('d', 'D'); } break;
+        case 0x21: { PRINT_KEY_SHIFT_CAPSLOCK('f', 'F'); } break;
+        case 0x22: { PRINT_KEY_SHIFT_CAPSLOCK('g', 'G'); } break;
+        case 0x23: { PRINT_KEY_SHIFT_CAPSLOCK('h', 'H'); } break;
+        case 0x24: { PRINT_KEY_SHIFT_CAPSLOCK('j', 'J'); } break;
+        case 0x25: { PRINT_KEY_SHIFT_CAPSLOCK('k', 'K'); } break;
+        case 0x26: { PRINT_KEY_SHIFT_CAPSLOCK('l', 'L'); } break;
         case 0x27: { PRINT_KEY_SHIFT(';', ':'); } break;
         case 0x28: { PRINT_KEY_SHIFT('\'', '"'); } break;
         case 0x1C: { kprint_char('\n'); } break;
         case 0x2A: { shift_pressed = 1; } break; // LShift
-        case 0x2C: { PRINT_KEY_SHIFT('z', 'Z'); } break;
-        case 0x2D: { PRINT_KEY_SHIFT('x', 'X'); } break;
-        case 0x2E: { PRINT_KEY_SHIFT('c', 'C'); } break;
-        case 0x2F: { PRINT_KEY_SHIFT('v', 'V'); } break;
-        case 0x30: { PRINT_KEY_SHIFT('b', 'B'); } break;
-        case 0x31: { PRINT_KEY_SHIFT('n', 'N'); } break;
-        case 0x32: { PRINT_KEY_SHIFT('m', 'M'); } break;
+        case 0x2C: { PRINT_KEY_SHIFT_CAPSLOCK('z', 'Z'); } break;
+        case 0x2D: { PRINT_KEY_SHIFT_CAPSLOCK('x', 'X'); } break;
+        case 0x2E: { PRINT_KEY_SHIFT_CAPSLOCK('c', 'C'); } break;
+        case 0x2F: { PRINT_KEY_SHIFT_CAPSLOCK('v', 'V'); } break;
+        case 0x30: { PRINT_KEY_SHIFT_CAPSLOCK('b', 'B'); } break;
+        case 0x31: { PRINT_KEY_SHIFT_CAPSLOCK('n', 'N'); } break;
+        case 0x32: { PRINT_KEY_SHIFT_CAPSLOCK('m', 'M'); } break;
         case 0x33: { PRINT_KEY_SHIFT(',', '<'); } break;
         case 0x34: { PRINT_KEY_SHIFT('.', '>'); } break;
         case 0x35: { PRINT_KEY_SHIFT('/', '?'); } break;
@@ -305,9 +306,7 @@ void handle_keyboard_interrupt(struct Registers *r)
         case 0x36 + SCANCODE_RELEASE_KEY: {
             shift_pressed = 0;
         } break;
-
     }
-    // print_hex(scancode);
 }
 
 void init_idt()
