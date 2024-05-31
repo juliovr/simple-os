@@ -2,12 +2,13 @@
 #include "pic.c"
 #include "pit.c"
 
-#define VIDEO_ADDRESS 0xb8000
-#define MAX_ROWS 25
-#define MAX_COLS 80
-#define SCREEN_SIZE (MAX_ROWS * MAX_COLS)
-#define WHITE_ON_BLACK 0x0f
-#define RED_ON_BLACK 0x04
+#define VIDEO_ADDRESS       0xb8000
+#define MAX_ROWS            25
+#define MAX_COLS            80
+#define SCREEN_SIZE         (MAX_ROWS * MAX_COLS)
+#define WHITE_ON_BLACK      0x0f
+#define RED_ON_BLACK        0x04
+#define CURSOR_CHAR         '_'
 
 typedef struct {
     int x;
@@ -26,7 +27,7 @@ void init_cursor()
 void scroll_screen()
 {
     // Copy memory to the previous line
-    short *video_memory = (short *)VIDEO_ADDRESS;
+    u16 *video_memory = (u16 *)VIDEO_ADDRESS;
     int i;
     for (i = 0; i < (SCREEN_SIZE - MAX_COLS); i++) {
         video_memory[i] = video_memory[i + MAX_COLS];
@@ -40,6 +41,7 @@ void scroll_screen()
 
 void set_cursor_next_line()
 {
+    clear_char(cursor.y, cursor.x);
     cursor.x = 0;
     cursor.y++;
     if (cursor.y >= MAX_ROWS) {
@@ -56,16 +58,56 @@ void advance_cursor()
     }
 }
 
+void backspace_cursor()
+{
+    clear_char(cursor.y, cursor.x);
+
+    cursor.x--;
+    if (cursor.x < 0) {
+        cursor.x = 0;
+        if (cursor.y > 0) {
+            cursor.y--;
+
+            // Find the last character on previous line
+            u16 *video_memory = (u16 *)VIDEO_ADDRESS;
+            int i;
+            for (i = 0; i < MAX_COLS; i++) {
+                int offset = ((cursor.y * MAX_COLS) + i);
+                if (video_memory[offset] == 0) {
+                    break;
+                }
+            }
+
+            cursor.x = i;
+        }
+        
+    }
+
+    print_cursor(CURSOR_CHAR);
+}
+
 
 void print_char_at(char c, int row, int col)
 {
-    short *video_memory = (short *)VIDEO_ADDRESS;
+    u16 *video_memory = (u16 *)VIDEO_ADDRESS;
 
     int offset = ((row * MAX_COLS) + col);
     video_memory[offset] = (text_color << 8 | c);
 }
 
-void print_char(char c)
+void print_cursor(char c)
+{
+    print_char_at(c, cursor.y, cursor.x);
+}
+
+void clear_char(int row, int col)
+{
+    u16 *video_memory = (u16 *)VIDEO_ADDRESS;
+    int offset = ((cursor.y * MAX_COLS) + cursor.x);
+    video_memory[offset] = 0;
+}
+
+void kprint_char(char c)
 {
     switch (c)
     {
@@ -77,12 +119,14 @@ void print_char(char c)
             advance_cursor();
         } break;
     }
+
+    print_cursor(CURSOR_CHAR);
 }
 
 void print_string(char *string)
 {
     while (*string) {
-        print_char(*string++);
+        kprint_char(*string++);
     }
 }
 
@@ -114,16 +158,16 @@ void print_hex(int n)
         }
 
         shift -= 4;
-        print_char(c);
+        kprint_char(c);
     }
-    print_char('\n');
+    kprint_char('\n');
 }
 
 void kprintln(char *string)
 {
     text_color = WHITE_ON_BLACK;
     kprint(string);
-    print_char('\n');
+    kprint_char('\n');
 }
 
 void clear_screen()

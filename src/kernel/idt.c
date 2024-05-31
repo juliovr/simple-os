@@ -232,11 +232,82 @@ void handler_int_0(struct Registers *r)
     kprint_error("\n");
 }
 
-#define SCANCODE_PORT   0x60
+#define SCANCODE_PORT           0x60
+#define SCANCODE_RELEASE_KEY    0x80    /* When the key is released, it triggers another IRQ with the same scancode plus 0x80, 
+                                           e.g. press 'a' (0x1E), when released it will trigger 0x9E. */
+
+static u8 shift_pressed = 0;
+
+#define PRINT_KEY_SHIFT(key, key_with_shift) if (shift_pressed) { kprint_char(key_with_shift); } else { kprint_char(key); }
+
+/* Scancodes: https://www.win.tue.nl/~aeb/linux/kbd/scancodes-10.html#scancodesets */
 void handle_keyboard_interrupt(struct Registers *r)
 {
     u8 scancode = inb(SCANCODE_PORT);
-    print_hex(scancode);
+    // TODO: save the values in a table and just lookup for the values. In this way the switch is reduced dramatically; I just need to left the special cases, like backspace.
+    switch (scancode) {
+        case 0x02: { PRINT_KEY_SHIFT('1', '!'); } break;
+        case 0x03: { PRINT_KEY_SHIFT('2', '@'); } break;
+        case 0x04: { PRINT_KEY_SHIFT('3', '#'); } break;
+        case 0x05: { PRINT_KEY_SHIFT('4', '$'); } break;
+        case 0x06: { PRINT_KEY_SHIFT('5', '%'); } break;
+        case 0x07: { PRINT_KEY_SHIFT('6', '^'); } break;
+        case 0x08: { PRINT_KEY_SHIFT('7', '&'); } break;
+        case 0x09: { PRINT_KEY_SHIFT('8', '*'); } break;
+        case 0x0A: { PRINT_KEY_SHIFT('9', '('); } break;
+        case 0x0B: { PRINT_KEY_SHIFT('0', ')'); } break;
+        case 0x0C: { PRINT_KEY_SHIFT('-', '_'); } break;
+        case 0x0D: { PRINT_KEY_SHIFT('=', '+'); } break;
+        case 0x0E: { backspace_cursor(); } break;
+        case 0x0F: { /* handle tab */ } break;
+        case 0x10: { PRINT_KEY_SHIFT('q', 'Q'); } break;
+        case 0x11: { PRINT_KEY_SHIFT('w', 'W'); } break;
+        case 0x12: { PRINT_KEY_SHIFT('e', 'E'); } break;
+        case 0x13: { PRINT_KEY_SHIFT('r', 'R'); } break;
+        case 0x14: { PRINT_KEY_SHIFT('t', 'T'); } break;
+        case 0x15: { PRINT_KEY_SHIFT('y', 'Y'); } break;
+        case 0x16: { PRINT_KEY_SHIFT('u', 'U'); } break;
+        case 0x17: { PRINT_KEY_SHIFT('i', 'I'); } break;
+        case 0x18: { PRINT_KEY_SHIFT('o', 'O'); } break;
+        case 0x19: { PRINT_KEY_SHIFT('p', 'P'); } break;
+        case 0x1A: { PRINT_KEY_SHIFT('[', '{'); } break;
+        case 0x1B: { PRINT_KEY_SHIFT(']', '}'); } break;
+        case 0x2B: { PRINT_KEY_SHIFT('\\', '|'); } break;
+        case 0x3A: { /* handle caps lock */ } break; // Caps lock
+        case 0x1E: { PRINT_KEY_SHIFT('a', 'A'); } break;
+        case 0x1F: { PRINT_KEY_SHIFT('s', 'S'); } break;
+        case 0x20: { PRINT_KEY_SHIFT('d', 'D'); } break;
+        case 0x21: { PRINT_KEY_SHIFT('f', 'F'); } break;
+        case 0x22: { PRINT_KEY_SHIFT('g', 'G'); } break;
+        case 0x23: { PRINT_KEY_SHIFT('h', 'H'); } break;
+        case 0x24: { PRINT_KEY_SHIFT('j', 'J'); } break;
+        case 0x25: { PRINT_KEY_SHIFT('k', 'K'); } break;
+        case 0x26: { PRINT_KEY_SHIFT('l', 'L'); } break;
+        case 0x27: { PRINT_KEY_SHIFT(';', ':'); } break;
+        case 0x28: { PRINT_KEY_SHIFT('\'', '"'); } break;
+        case 0x1C: { kprint_char('\n'); } break;
+        case 0x2A: { shift_pressed = 1; } break; // LShift
+        case 0x2C: { PRINT_KEY_SHIFT('z', 'Z'); } break;
+        case 0x2D: { PRINT_KEY_SHIFT('x', 'X'); } break;
+        case 0x2E: { PRINT_KEY_SHIFT('c', 'C'); } break;
+        case 0x2F: { PRINT_KEY_SHIFT('v', 'V'); } break;
+        case 0x30: { PRINT_KEY_SHIFT('b', 'B'); } break;
+        case 0x31: { PRINT_KEY_SHIFT('n', 'N'); } break;
+        case 0x32: { PRINT_KEY_SHIFT('m', 'M'); } break;
+        case 0x33: { PRINT_KEY_SHIFT(',', '<'); } break;
+        case 0x34: { PRINT_KEY_SHIFT('.', '>'); } break;
+        case 0x35: { PRINT_KEY_SHIFT('/', '?'); } break;
+        case 0x36: { shift_pressed = 1; } break; // RShift
+        case 0x39: { kprint_char(' '); } break;
+
+        // Release shift key
+        case 0x2A + SCANCODE_RELEASE_KEY:
+        case 0x36 + SCANCODE_RELEASE_KEY: {
+            shift_pressed = 0;
+        } break;
+
+    }
+    // print_hex(scancode);
 }
 
 void init_idt()
